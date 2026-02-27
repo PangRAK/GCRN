@@ -142,7 +142,20 @@ class supv_main_model(nn.Module):
         self.cos = nn.CosineSimilarity(dim = -1)
         self.tanh = nn.Tanh()
         self.batch_norm = nn.BatchNorm1d(num_features=10)
-        self.weight = 0.5
+        self.weight = 0.4
+        self.adaptive_weight_predictor = nn.Sequential(
+            nn.Linear(2050, 1024),
+            nn.ReLU(inplace=True),
+            nn.Linear(1024, 1),
+            nn.Sigmoid()
+        )
+        # self.adaptive_weight_predictor = nn.Sequential(
+        #     nn.Linear(2, 16),
+        #     nn.ReLU(inplace=True),
+        #     nn.Linear(16, 1),
+        #     nn.Sigmoid()
+        # )
+        # self.adaptive_weight_predictor = nn.Linear(2, 1)
 
 
 
@@ -156,7 +169,7 @@ class supv_main_model(nn.Module):
         # # audio_feature = audio_feature.transpose(1, 0).contiguous()  # -> torch.Size([10, 32, 1024])
         visual_feature = self.v_fc(visual_feature)                  # -> torch.Size([32, 10, 1024])
         # audio_feature = self.a_fc(audio_feature)                  # -> torch.Size([32, 10, 1024])
-        visual_feature = self.dropout(self.ReLU(visual_feature))    # -> torch.Size([32, 10, 1024])
+        visual_feature = self.ReLU(visual_feature)    # -> torch.Size([32, 10, 1024])
         # audio_feature = self.dropout(self.ReLU(audio_feature))    # -> torch.Size([32, 10, 1024])
         
         '''Audio guided visual attention'''
@@ -168,10 +181,10 @@ class supv_main_model(nn.Module):
         concat_va = torch.cat((lstm_video, lstm_audio), dim=-1)
         
         '''Multi-window Temporal Fusion'''
-        feat1 = self.dropout(self.mwtf(concat_va, window=10, file_names=file_names, epoch=epoch))
-        feat2 = self.dropout(self.mwtf(concat_va, window=5))
-        feat3 = self.dropout(self.mwtf(concat_va,  window=3))
-        feat4 = self.dropout(self.mwtf(concat_va,  window=2, file_names=file_names, epoch=epoch))
+        feat1 = self.mwtf(concat_va, window=10, file_names=file_names, epoch=epoch)
+        feat2 = self.mwtf(concat_va, window=5)
+        feat3 = self.mwtf(concat_va,  window=3)
+        feat4 = self.mwtf(concat_va,  window=2, file_names=file_names, epoch=epoch)
         mwtf_feat = torch.cat((feat1, feat2, feat3, feat4), dim=-1)
         
         
@@ -186,23 +199,29 @@ class supv_main_model(nn.Module):
         # segment_similarity = (self.tanh(segment_similarity) + 1) / 2 # tanh
         
         """원래"""
-        event_relevant = ((1-self.weight) * alpha_att) + (self.weight * segment_similarity)
-
+        # event_relevant = ((1-self.weight) * alpha_att) + (self.weight * segment_similarity)  # Weighted sum
+        
+        # event_relevant = torch.min(alpha_att, segment_similarity)       # Hard pruning (min)
+        # event_relevant = torch.max(alpha_att, segment_similarity)       # Hard pruning (max)
+        
+        fusion_features = torch.cat([alpha_att, segment_similarity, audio_feature, visual_feature], dim=-1)
+        # fusion_features = torch.cat([alpha_att, segment_similarity], dim=-1)
+        adaptive_weight = self.adaptive_weight_predictor(fusion_features)
+        event_relevant = ((1 - adaptive_weight) * alpha_att) + (adaptive_weight * segment_similarity)
         
         '''Refiner'''
-        # refine_feat = mwtf_feat * event_relevant
-        refine_feat = mwtf_feat * alpha_att
+        refine_feat = mwtf_feat * event_relevant
+        # refine_feat = mwtf_feat * alpha_att
 
         # Single window fusion over the refined vector O_prime        
-        refine_feat = self.refiner_mwtf(refine_feat, window=10) 
+        refine_feat = self.dropout(self.refiner_mwtf(refine_feat, window=10))
         refine_feat = self.ln512(refine_feat)
 
         max_feat, _ = refine_feat.max(1) # torch.Size([batch, dimension])
-        class_logits = F.softmax(self.refiner_w(max_feat), dim=-1)
+        class_logits = F.softmax(self.dropout(self.refiner_w(max_feat)), dim=-1)
         
         event_relevant = event_relevant.transpose(1,0).contiguous()
         scores = (event_relevant, class_logits, refine_feat, alpha_att, segment_similarity)
 
         return scores
-
-        
+ 

@@ -382,7 +382,6 @@ class MWTF(nn.Module):
             beta_feat = torch.bmm(Q_feat.transpose(1, 2), K_feat) / sqrt_time
             
             # Apply softmax to generate attention maps
-            """Transpose 필요한지, softmax dim 맞는지, 검토 필요!!!!!!!"""
             A_time = F.softmax(beta_time, dim=-1)  # Temporal attention map
             A_feat = F.softmax(beta_feat, dim=-2)  # Feature attention map
 
@@ -481,7 +480,6 @@ class rak_module(nn.Module):
             time_energy = torch.bmm(time_Q_feat, time_K_feat.transpose(1, 2)) / sqrt_feat
             
             # Apply softmax to generate attention maps
-            """Transpose 필요한지, softmax dim 맞는지, 검토 필요!!!!!!!"""
             time_attention = F.softmax(time_energy, dim=-1)  # Temporal attention map
             feat_attention = F.softmax(feat_energy, dim=-2)  # Feature attention map
             

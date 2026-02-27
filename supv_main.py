@@ -24,7 +24,7 @@ from dataset.AVEDataset import AVEDataset
 import pdb
 
  # =================================  seed config ============================
-SEED = 789
+SEED = 456
 random.seed(SEED)
 np.random.seed(seed=SEED)
 torch.manual_seed(seed=SEED)
@@ -160,7 +160,7 @@ def main():
                     #     task='Supervised',
                     #     epoch=epoch + 1,
                     # )
-                    # save_data(pred, targets, file_names, feat, event_relevant_score, segment_similar, is_event_scores, fold, epoch )
+                    save_data(pred, targets, file_names, feat, event_relevant_score, segment_similar, is_event_scores, fold, epoch)
                 logger.info(
                     f'*********************************************************************************\n'
                     f'Fold: [{fold}] Epoch: [{epoch}] (best epoch : {best_accuracy_epoch}, best acc : {best_accuracy})\n'
@@ -171,6 +171,8 @@ def main():
         best_acc_list.append(best_accuracy)
     for x in best_acc_list:
         logger.info(x)
+    average = sum(best_acc_list) / len(best_acc_list)
+    logger.info(f'Average : {average}')
 
 
 def train_epoch(model, train_dataloader, criterion, criterion_event, optimizer, epoch, fold):
@@ -403,15 +405,16 @@ def save_checkpoint(state_dict, top1, task, epoch):
     torch.save(state_dict, model_name)
     
 def save_data(pred, target, file_name, feat, event_relevant_score, segment_similar, is_event_scores, fold, epoch):
-    data_name = f'{args.snapshot_pref}/data_fold_{fold}_epoch_{epoch}.pth'
+    data_name = f'{args.snapshot_pref}/data_fold_{fold}.pth'
     # pdb.set_trace()
-    data = {'pred' : pred,
+    data = {'epoch': epoch,
+            'pred' : pred,
             'target' : target,
             'file_name' : file_name,
             'feature' : feat,
-            'event_relevant_score' : event_relevant_score,
-            'segment_similar' : segment_similar,
-            'is_event_scores' : is_event_scores}
+            'event_relevant_score' : event_relevant_score,  # before mitigating
+            'segment_similar' : segment_similar,            # similarity
+            'is_event_scores' : is_event_scores}            # after mitigating
     torch.save(data, data_name)
 
 

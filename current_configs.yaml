@@ -9,7 +9,7 @@ start_epoch: 0
 weight_decay: 5e-4
 
   # ======================================= Print and snapshot configs ==================================
-snapshot_pref: ./Exps_789/fix_data_622_fix_modal_0.5_av-simil_consistent_product/
+snapshot_pref: ./revision_exp/adaptive_weight_av/
 print_freq: 1
 eval_freq: 1
 
