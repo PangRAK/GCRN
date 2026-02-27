@@ -1,4 +1,4 @@
-## Cross-Modal Relation-Aware Networks for Audio-Visual Event Localization
+<!-- ## Cross-Modal Relation-Aware Networks for Audio-Visual Event Localization
 
 This repo holds the code for the work presented on *ACM Multimedia 2020* 
 [[Paper]](https://dl.acm.org/doi/pdf/10.1145/3394171.3413581)
@@ -107,4 +107,4 @@ Please cite the following paper if you feel this repo useful to your research
 [Audio_feature]: https://drive.google.com/file/d/1F6p4BAOY-i0fDXUOhG7xHuw_fnO5exBS/view?usp=sharing
 [Visual_feature]: https://drive.google.com/file/d/1hQwbhutA3fQturduRnHMyfRqdrRHgmC9/view?usp=sharing
 [Noisy_visual_feature]: https://drive.google.com/file/d/1I3OtOHJ8G1-v5G2dHIGCfevHQPn-QyLh/view?usp=sharing
-[YAPENG]: https://github.com/YapengTian/AVE-ECCV18
+[YAPENG]: https://github.com/YapengTian/AVE-ECCV18 -->
